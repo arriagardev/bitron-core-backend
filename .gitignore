@@ -1,0 +1,21 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.swp
+*.DS_Store
+
+## Publish
+publish/
+out/
+
+## Secrets
+appsettings.*.local.json
+*.pfx
+*.p12
+
+## Docker volumes
+mosquitto/data/
+mosquitto/log/

@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bitron_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bitroncore
+      POSTGRES_USER: bitron
+      POSTGRES_PASSWORD: bitron123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bitron -d bitroncore"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: bitron_mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+
+  api:
+    build:
+      context: .
+      dockerfile: src/BitronCore.Api/Dockerfile
+    container_name: bitron_api
+    restart: unless-stopped
+    ports:
+      - "5000:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=bitroncore;Username=bitron;Password=bitron123
+      - Mqtt__Host=mosquitto
+      - Mqtt__Port=1883
+      - Mqtt__ClientId=bitron-core-backend
+      - Mqtt__TopicPattern=bitron/+/inspeccion/resultado
+
+volumes:
+  postgres_data:
+  mosquitto_data:
+  mosquitto_log:
