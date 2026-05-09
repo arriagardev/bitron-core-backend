@@ -2,20 +2,14 @@ using BitronCore.Application.Common;
 using BitronCore.Application.DTOs;
 using BitronCore.Application.Interfaces;
 using BitronCore.Domain.Entities;
-using Microsoft.Extensions.Logging;
 
 namespace BitronCore.Application.Services;
 
 public class InspeccionService
 {
     private readonly IInspeccionRepository _repo;
-    private readonly ILogger<InspeccionService> _logger;
 
-    public InspeccionService(IInspeccionRepository repo, ILogger<InspeccionService> logger)
-    {
-        _repo = repo;
-        _logger = logger;
-    }
+    public InspeccionService(IInspeccionRepository repo) => _repo = repo;
 
     public async Task<(bool esNueva, InspeccionResponseDto dto)> ProcesarAsync(
         InspeccionMqttDto mqttDto,
@@ -23,16 +17,10 @@ public class InspeccionService
         CancellationToken ct = default)
     {
         if (await _repo.ExisteAsync(mqttDto.TransaccionId, ct))
-        {
-            _logger.LogWarning("Transaccion duplicada ignorada: {Id}", mqttDto.TransaccionId);
             return (false, MapToResponse(MapToEntity(mqttDto, linea)));
-        }
 
         var entidad = MapToEntity(mqttDto, linea);
         await _repo.AddAsync(entidad, ct);
-
-        _logger.LogInformation("Inspeccion persistida: {Id} | Linea: {Linea} | Veredicto: {V}",
-            entidad.TransaccionId, linea, entidad.VeredictoGlobal);
 
         return (true, MapToResponse(entidad));
     }

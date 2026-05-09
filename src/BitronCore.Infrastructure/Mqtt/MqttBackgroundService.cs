@@ -99,7 +99,15 @@ public class MqttBackgroundService : BackgroundService
             var (esNueva, dto) = await service.ProcesarAsync(mqttDto, linea);
 
             if (esNueva)
+            {
+                _logger.LogInformation("Inspeccion persistida: {Id} | Linea: {Linea} | Veredicto: {V}",
+                    dto.TransaccionId, linea, dto.VeredictoGlobal);
                 await notifier.NotificarAsync(dto, linea);
+            }
+            else
+            {
+                _logger.LogWarning("Transaccion duplicada ignorada: {Id}", mqttDto.TransaccionId);
+            }
         }
         catch (Exception ex)
         {

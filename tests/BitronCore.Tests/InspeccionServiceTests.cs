@@ -3,7 +3,6 @@ using BitronCore.Application.Interfaces;
 using BitronCore.Application.Services;
 using BitronCore.Domain.Entities;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace BitronCore.Tests;
@@ -11,10 +10,9 @@ namespace BitronCore.Tests;
 public class InspeccionServiceTests
 {
     private readonly Mock<IInspeccionRepository> _repoMock = new();
-    private readonly Mock<ILogger<InspeccionService>> _loggerMock = new();
 
     private InspeccionService CreateService() =>
-        new(_repoMock.Object, _loggerMock.Object);
+        new(_repoMock.Object);
 
     [Fact]
     public async Task ProcesarAsync_GuardaNuevoRegistro_CuandoNoExisteDuplicado()
