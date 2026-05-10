@@ -8,24 +8,24 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ── Persistencia ─────────────────────────────────────────────────────────────
+// ── Persistencia ───────────────────────────────────────────────────────────────────────────────────
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IInspeccionRepository, InspeccionRepository>();
 
-// ── Aplicación ────────────────────────────────────────────────────────────────
+// ── Aplicación ────────────────────────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<InspeccionService>();
 
-// ── MQTT ─────────────────────────────────────────────────────────────────────
+// ── MQTT ───────────────────────────────────────────────────────────────────────────────────────
 builder.Services.Configure<MqttOptions>(builder.Configuration.GetSection(MqttOptions.SectionName));
 builder.Services.AddHostedService<MqttBackgroundService>();
 
-// ── SignalR ───────────────────────────────────────────────────────────────────
+// ── SignalR ──────────────────────────────────────────────────────────────────────────────────────
 builder.Services.AddSignalR();
 builder.Services.AddScoped<IInspeccionNotifier, SignalRInspeccionNotifier>();
 
-// ── API ───────────────────────────────────────────────────────────────────────
+// ── API ───────────────────────────────────────────────────────────────────────────────────────
 builder.Services.AddControllers()
     .AddJsonOptions(opts =>
         opts.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase);
@@ -42,19 +42,16 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// ── Migraciones automáticas al iniciar ────────────────────────────────────────
+// ── Esquema de base de datos ────────────────────────────────────────────────────────────────────────
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.MigrateAsync();
+    await db.Database.EnsureCreatedAsync();
 }
 
-// ── Middleware ────────────────────────────────────────────────────────────────
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Bitron Core API v1"));
-}
+// ── Middleware ────────────────────────────────────────────────────────────────────────────────────
+app.UseSwagger();
+app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Bitron Core API v1"));
 
 app.UseCors();
 app.MapControllers();
